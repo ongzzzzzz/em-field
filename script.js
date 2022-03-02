@@ -1,16 +1,23 @@
+// // actual physical values
 // const e_c = 1.60217662e-19;
 // const m_e = 9.10938291e-31;
 // const k_e = 8.98755178e9;
 
+// sandbox values
 const e_c = 1;
 const m_e = 9.10938291e-31;
 const k_e = 10000;
-
 let B = 10;
+
+let started = false;
+let clicked;
+let dragged;
 
 let particles = [];
 function setup() {
 	createCanvas(windowWidth, windowHeight);
+	clicked = createVector(0, 0);
+	dragged = createVector(0, 0);
 
 	for (let i=0; i<5; i++) {
 		// Particle(x, y, r, q, m)
@@ -33,6 +40,7 @@ let dstep = 10;
 function draw() {
 	background(0);
 	stroke(255);
+	
 	for (let i=0; i<width; i+=step) {
 		for (let j=0; j<height; j+=step) {
 			line(i+dstep, j+dstep, i+step-dstep, j+step-dstep);
@@ -46,29 +54,31 @@ function draw() {
 		p.show();
 	})
 
-	if (clicked) 
-		line(
-			clickedX, clickedY,
-			clickedX + (clickedX - mouseX),
-			clickedY + (clickedY - mouseY)
+	if (clicked.x || clicked.y) 
+		drawArrow(
+			clicked, 
+			dragged,
+			"pink"
 		)
+
+	drawInfoBox();
 }
 
-
-
-let clicked = false;
-let [clickedX, clickedY] = [0, 0];
-let releasedX = 0, releasedY = 0;
 
 function mousePressed() {
 	if (!mouseInCanvas()) return
+	if (!started) {
+		started = true;
+		return
+	}
 
-	clicked = true;
-	clickedX = mouseX, clickedY = mouseY;
+	clicked.x = mouseX;
+	clicked.y = mouseY;
 }
 
 function mouseDragged() {
-	
+	dragged.x = clicked.x - mouseX;
+	dragged.y = clicked.y - mouseY;
 }
 
 function mouseReleased() {
@@ -78,20 +88,34 @@ function mouseReleased() {
 	// x y r q m
 	particles.push(
 		new Particle(
-			clickedX, clickedY,
+			clicked.x, clicked.y,
 			10,
-			Math.random() > 0.5 ? e_c : -e_c,
+			particles.length%2 ? e_c : -e_c,
 			500,
-			createVector(clickedX - mouseX, 
-						 clickedY - mouseY).div(50)
+			dragged.copy().div(50)
 		)
 	)
 
-
-	clicked = false;
-	[clickedX, clickedY] = [0, 0]
+	clicked.x = 0; clicked.y = 0;
+	dragged.x = 0; dragged.y = 0;
 }
 
 function mouseInCanvas() {
 	return !(mouseX < 0 || mouseX > width || mouseY > height || mouseY < 0)
+}
+
+
+function drawInfoBox() {
+	if (!started) {
+		stroke("white");
+		fill("white");
+		rectMode(RADIUS);
+		rect(width/2, height/2, width/4, height/3, 10);
+		let marg = 10;
+		fill("black");
+		text(
+			"Hey!\nThis is a simulation for charged particles under the influences of magnetic and electric fields!\n\nThe red particles denote Positive Charges (eg. protons) and the blue ones Negative Charges (eg. electrons). The magnetic field points into the screen.\n\nClick and drag to shoot charged particles like angry birds, have fun! :3\n(they alternate between red and blue charges for every click)\n\nmade with 💖 by ongzzzzzz on github",
+			width/4 + marg, height/6 + marg, width/2 - marg, height*2/3 - marg
+		)
+	}
 }
